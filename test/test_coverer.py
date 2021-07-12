@@ -129,7 +129,6 @@ class TestCover:
             {"cubes": 2, "range": [-4, 4], "overlap": 0.5, "radius": 4.0},
             {"cubes": 3, "range": [-4, 4], "overlap": 0.5, "radius": 2.666666666},
             {"cubes": 10, "range": [-4, 4], "overlap": 0.5, "radius": 0.8},
-            {"cubes": 10, "range": [-4, 4], "overlap": 1.0, "radius": np.inf},
         ]
 
         for test_case in test_cases:
