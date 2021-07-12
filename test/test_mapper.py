@@ -126,7 +126,7 @@ class TestMap:
         graph = mapper.map(
             lens,
             X=X,
-            cover=Cover(n_cubes=2, perc_overlap=1),
+            cover=Cover(n_cubes=2, perc_overlap=0.99),
             clusterer=cluster.DBSCAN(metric="euclidean", min_samples=3),
             remove_duplicate_nodes=True,
         )

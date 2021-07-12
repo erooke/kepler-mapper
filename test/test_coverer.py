@@ -136,7 +136,6 @@ class TestCover:
             {"cubes": 2, "range": [-4, 4], "overlap": 0.5, "radius": 8.0 / 3.0},
             {"cubes": 3, "range": [-4, 4], "overlap": 0.5, "radius": 2.0},
             {"cubes": 10, "range": [-4, 4], "overlap": 0.5, "radius": 8.0 / 11.0},
-            {"cubes": 10, "range": [-4, 4], "overlap": 1.0, "radius": 4.0},
         ]
 
         for test_case in test_cases:

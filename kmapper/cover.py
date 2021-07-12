@@ -175,7 +175,7 @@ class Cover:
         else:
             perc_overlap = np.repeat(self.perc_overlap, n_dims)
 
-        assert all(0.0 <= p <= 1.0 for p in perc_overlap), (
+        assert all(0.0 <= p < 1.0 for p in perc_overlap), (
             "Each overlap percentage must be between 0.0 and 1.0., not %s"
             % perc_overlap
         )
