@@ -101,34 +101,33 @@ class Cover:
 
     def _compute_bounds(self, data):
 
-        # If self.limits is array-like
-        if isinstance(self.limits, np.ndarray):
-            # limits_array is used so we can change the values of self.limits from None to the min/max
-            limits_array = np.zeros(self.limits.shape)
-            limits_array[:, 0] = np.min(data, axis=0)
-            limits_array[:, 1] = np.max(data, axis=0)
-            limits_array[self.limits != float("inf")] = 0
-            self.limits[self.limits == float("inf")] = 0
-            bounds_arr = self.limits + limits_array
-            """ bounds_arr[i,j] = self.limits[i,j] if self.limits[i,j] == inf
-                bounds_arr[i,j] = max/min(data[i]) if self.limits == inf """
-            bounds = (bounds_arr[:, 0], bounds_arr[:, 1])
+        if self.limits is None:
+            return (np.min(data, axis=0), np.max(data, axis=0))
 
-            # Check new bounds are actually sensible - do they cover the range of values in the dataset?
-            if not (
-                (np.min(data, axis=0) >= bounds_arr[:, 0]).all()
-                or (np.max(data, axis=0) <= bounds_arr[:, 1]).all()
-            ):
-                warnings.warn(
-                    "The limits given do not cover the entire range of the lens functions\n"
-                    + "Actual Minima: %s\tInput Minima: %s\n"
-                    % (np.min(data, axis=0), bounds_arr[:, 0])
-                    + "Actual Maxima: %s\tInput Maxima: %s\n"
-                    % (np.max(data, axis=0), bounds_arr[:, 1])
-                )
+        # limits_array is used so we can change the values of self.limits from None to the min/max
+        limits_array = np.zeros(self.limits.shape)
+        limits_array[:, 0] = np.min(data, axis=0)
+        limits_array[:, 1] = np.max(data, axis=0)
+        limits_array[self.limits != float("inf")] = 0
+        self.limits[self.limits == float("inf")] = 0
+        bounds_arr = self.limits + limits_array
+        """ bounds_arr[i,j] = self.limits[i,j] if self.limits[i,j] == inf
+            bounds_arr[i,j] = max/min(data[i]) if self.limits == inf """
+        bounds = (bounds_arr[:, 0], bounds_arr[:, 1])
 
-        else:  # It must be None, as we checked to see if it is array-like or None in __init__
-            bounds = (np.min(data, axis=0), np.max(data, axis=0))
+        # Check new bounds are actually sensible - do they cover the range of values in the dataset?
+        if not (
+            (np.min(data, axis=0) >= bounds_arr[:, 0]).all()
+            or (np.max(data, axis=0) <= bounds_arr[:, 1]).all()
+        ):
+            warnings.warn(
+                "The limits given do not cover the entire range of the lens functions\n"
+                + "Actual Minima: %s\tInput Minima: %s\n"
+                % (np.min(data, axis=0), bounds_arr[:, 0])
+                + "Actual Maxima: %s\tInput Maxima: %s\n"
+                % (np.max(data, axis=0), bounds_arr[:, 1])
+            )
+
 
         return bounds
 
