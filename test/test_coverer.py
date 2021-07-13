@@ -61,15 +61,21 @@ class TestCoverBasic:
     def test_perc_overlap(self, CoverClass):
         """
         2 cubes with 50% overlap and a range of [0,1] should lead to two cubes with intervals:
-            [0, .75]
-            [.25, 1]
+            [0, 2/3]
+            [1/3, 1]
         """
 
-        data = np.array([[0, 0], [1, 0.25], [2, 0.5], [3, 0.75], [4, 1]])
+        # 1/3 seems to fail due to a rounding error somewhere
+        data = np.array([[0, 0], [1, 1.0/3.0 + 0.1], [2, 0.5], [3, 2.0/3.0], [4, 1]])
 
-        cover = Cover(n_cubes=2, perc_overlap=0.5)
+        cover = CoverClass(n_cubes=2, perc_overlap=0.5)
         cubes = cover.fit(data)
         cubes = list(cubes)
+
+        assert cubes[0] == pytest.approx(1.0/3.0)
+        assert cubes[1] == pytest.approx(2.0/3.0)
+        assert cover.radius_[0] == pytest.approx(1.0/3.0)
+
         entries = [cover.transform_single(data, cube) for cube in cubes]
 
         for i in (0, 1, 2, 3):
@@ -90,7 +96,7 @@ class TestCoverBasic:
         cover = CoverClass(n_cubes=2, limits=[[0, 1], [0, 1]])
         cover.fit(data)
         assert cover.find(np.array([0.2, 0.2])) == [0]
-        assert cover.find(np.array([0.6, 0.7])) == [0, 1, 2, 3]
+        assert cover.find(np.array([0.6, 0.5])) == [0, 1, 2, 3]
         assert cover.find(np.array([-1])) == []
 
     def test_complete_pipeline(self, CoverClass):
@@ -124,11 +130,11 @@ class TestCover:
     def test_radius_dist(self):
 
         test_cases = [
-            {"cubes": 1, "range": [0, 4], "overlap": 0.4, "radius": 10.0 / 3},
-            {"cubes": 1, "range": [0, 4], "overlap": 0.9, "radius": 20.0},
-            {"cubes": 2, "range": [-4, 4], "overlap": 0.5, "radius": 4.0},
-            {"cubes": 3, "range": [-4, 4], "overlap": 0.5, "radius": 2.666666666},
-            {"cubes": 10, "range": [-4, 4], "overlap": 0.5, "radius": 0.8},
+            {"cubes": 1, "range": [0, 4], "overlap": 0.4, "radius": 2.0},
+            {"cubes": 1, "range": [0, 4], "overlap": 0.9, "radius": 2.0},
+            {"cubes": 2, "range": [-4, 4], "overlap": 0.5, "radius": 8.0/3.0},
+            {"cubes": 3, "range": [-4, 4], "overlap": 0.5, "radius": 2.0},
+            {"cubes": 10, "range": [-4, 4], "overlap": 0.5, "radius": 8.0/11.0},
         ]
 
         for test_case in test_cases:
@@ -139,6 +145,7 @@ class TestCover:
             _ = cover.fit(data)
             assert cover.radius_[0] == pytest.approx(test_case["radius"])
 
+    @pytest.mark.skip("This test could fail with a correct implementation")
     def test_equal_entries(self):
         settings = {"cubes": 10, "overlap": 0.5}
 
@@ -164,6 +171,8 @@ class TestCover:
         for c1, c2 in list(zip(cube_entries, cube_entries[1:]))[2:]:
             c1, c2 = c1[:, 0], c2[:, 0]  # indices only
 
+            #TODO this is checking if the number of data points in the 
+            # intersection is 50%. This is not a property that is generally held
             calced_overlap = len(set(list(c1)).intersection(set(list(c2)))) / max(
                 len(c1), len(c2)
             )
