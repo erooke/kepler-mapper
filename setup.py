@@ -4,7 +4,7 @@ from setuptools import setup
 
 import re
 
-VERSIONFILE = "kmapper/_version.py"
+VERSIONFILE = "kmapper_patch/_version.py"
 verstrline = open(VERSIONFILE, "rt").read()
 VSRE = r"^__version__ = ['\"]([^'\"]*)['\"]"
 mo = re.search(VSRE, verstrline, re.M)
@@ -17,7 +17,7 @@ with open("README.md") as f:
     long_description = f.read()
 
 setup(
-    name="kmapper",
+    name="kmapper_patch",
     version=verstr,
     description="Python implementation of Mapper algorithm for Topological Data Analysis.",
     long_description=long_description,
@@ -26,7 +26,7 @@ setup(
     author_email="info@mlwave.com, nat@saulgill.com",
     url="http://kepler-mapper.scikit-tda.org",
     license="MIT",
-    packages=["kmapper"],
+    packages=["kmapper_patch"],
     include_package_data=True,
     extras_require={
         "testing": [  # `pip install -e ".[testing]"``
