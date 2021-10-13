@@ -1,18 +1,17 @@
-import pytest
-import numpy as np
-
+import warnings
 from collections import defaultdict
 
-import warnings
-from kmapper import KeplerMapper, Cover, cluster
-
-from sklearn.preprocessing import StandardScaler
-from sklearn.decomposition import PCA
-from sklearn.linear_model import Lasso
-from sklearn.manifold import MDS
+import numpy as np
+import pytest
 from scipy import sparse
 from scipy.spatial import distance
 from sklearn import neighbors
+from sklearn.decomposition import PCA
+from sklearn.linear_model import Lasso
+from sklearn.manifold import MDS
+from sklearn.preprocessing import StandardScaler
+
+from kmapper import Cover, KeplerMapper, cluster
 
 
 class TestLogging:
@@ -87,10 +86,10 @@ class TestMap:
             cover=Cover(n_cubes=3, perc_overlap=0.75),
             clusterer=cluster.DBSCAN(metric="euclidean", min_samples=3),
         )
-        assert max([len(s) for s in graph["simplices"]]) <= 2
+        assert len(graph["simplices"]) <= 2
 
-        nodes = [n for n in graph["simplices"] if len(n) == 1]
-        edges = [n for n in graph["simplices"] if len(n) == 2]
+        nodes = graph["simplices"][0]
+        edges = graph["simplices"][1]
         assert len(nodes) == 3
         assert len(edges) == 3
 
@@ -116,7 +115,6 @@ class TestMap:
             clusterer=cluster.DBSCAN(metric="euclidean", min_samples=3),
         )
 
-        assert graph["links"] == graph2["links"]
         assert graph["nodes"] == graph2["nodes"]
         assert graph["simplices"] == graph2["simplices"]
 
@@ -210,7 +208,9 @@ class TestMap:
         X = np.random.rand(100, 2)
         lens = mapper.fit_transform(X)
 
-        graph = mapper.map(lens, X, clusterer=cluster.AffinityPropagation(random_state=0))
+        graph = mapper.map(
+            lens, X, clusterer=cluster.AffinityPropagation(random_state=0)
+        )
 
     def test_agglomerative_clustering(self):
         mapper = KeplerMapper()

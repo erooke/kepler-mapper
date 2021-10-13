@@ -1,26 +1,26 @@
 from __future__ import division
-from .utils import deprecated_alias
 
 import numpy as np
 
+from .utils import deprecated_alias
 from .visuals import (
+    _build_histogram,
+    _format_cluster_statistics,
+    _format_meta,
+    _format_projection_statistics,
+    _graph_data_distribution,
+    _map_val2color,
+    _node_color_function,
     _scale_color_values,
     _size_node,
-    _format_projection_statistics,
-    _format_cluster_statistics,
-    _node_color_function,
-    _format_meta,
     _to_html_format,
-    _map_val2color,
-    _graph_data_distribution,
-    _build_histogram,
     _tooltip_components,
 )
 
 try:
     import igraph as ig
-    import plotly.graph_objs as go
     import ipywidgets as ipw
+    import plotly.graph_objs as go
     import plotly.io as pio
 except ImportError:
     print(
@@ -252,14 +252,13 @@ def scomplex_to_graph(
         }
 
         json_dict["nodes"].append(n)
-    for i, (node_id, linked_node_ids) in enumerate(simplicial_complex["links"].items()):
-        for linked_node_id in linked_node_ids:
-            lnk = {
-                "source": node_id_to_num[node_id],
-                "target": node_id_to_num[linked_node_id],
-            }
+    for i, (node_id, linked_node_id) in enumerate(simplicial_complex["simplices"][1]):
+        lnk = {
+            "source": node_id_to_num[node_id],
+            "target": node_id_to_num[linked_node_id],
+        }
 
-            json_dict["links"].append(lnk)
+        json_dict["links"].append(lnk)
 
     return json_dict
 
