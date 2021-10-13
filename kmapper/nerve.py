@@ -66,41 +66,30 @@ class SimplicialNerve(Nerve):
 
         """
 
-        simplices = [[n] for n in nodes]
-        result = defaultdict(list)
+        simplices = [list(nodes)]
 
         if self.dim == 0:
-            return result, simplices
+            return simplices
 
         _nodes = {k: frozenset(v) for k, v in nodes.items()}
 
-        # Currently edges need to be treated seperately to appease the api
-
-        # Create links when clusters from different hypercubes have members with the same sample id.
-        candidates = itertools.combinations(_nodes.items(), 2)
-        for (key_1, node_1), (key_2, node_2) in candidates:
-            # if there are non-unique members in the union
-            if len(node_1.intersection(node_2)) >= self.min_intersection:
-                result[key_1].append(key_2)
-                simplices.append([key_1, key_2])
-
-        dimensions = range(2, self.dim + 1) if self.dim else itertools.count(2)
+        dimensions = range(1, self.dim + 1) if self.dim else itertools.count(1)
 
         for current_dim in dimensions:
             more = False
+            simplices.append(list())
             candidates = itertools.combinations(_nodes.items(), current_dim + 1)
-
             for candidate in candidates:
                 key, elements = zip(*candidate)
-                if len(frozenset.intersection(*elements)) >= self.min_intersections:
-                    simplices.append(list(key))
+                if len(frozenset.intersection(*elements)) >= self.min_intersection:
+                    simplices[-1].append(key)
                     more = True
 
             if not more:
                 # If no k-simplices are found there are no k+1 simplices either
                 break
 
-        return result, simplices
+        return simplices
 
 
 class GraphNerve(SimplicialNerve):

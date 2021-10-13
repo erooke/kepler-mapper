@@ -1,13 +1,15 @@
 # A small helper class to house functions needed by KeplerMapper.visualize
+import json
+import os
+from ast import literal_eval
+from collections import defaultdict
+
 import numpy as np
 import scipy.sparse
+from jinja2 import Environment, FileSystemLoader, StrictUndefined, Template
 from sklearn import preprocessing
-import json
-from collections import defaultdict
-from ast import literal_eval
+
 from .utils import deprecated_alias
-import os
-from jinja2 import Environment, FileSystemLoader, Template, StrictUndefined
 
 colorscale_default = [
     [0.0, "rgb(68, 1, 84)"],  # Viridis
@@ -233,7 +235,7 @@ def _format_meta(graph, color_function_name, node_color_function, custom_meta=No
         "color_function_name": color_function_name,
         "node_color_function": node_color_function,
         "n_nodes": len(graph["nodes"]),
-        "n_edges": sum([len(l) for l in graph["links"].values()]),
+        "n_edges": len(graph["simplices"][1]),
         "n_total": sum([len(l) for l in graph["nodes"].values()]),
         "n_unique": n_unique,
     }
@@ -313,15 +315,18 @@ def _format_mapper_data(
             "tooltip": tt,
         }
         json_dict["nodes"].append(n)
-    for i, (node_id, linked_node_ids) in enumerate(graph["links"].items()):
-        for linked_node_id in linked_node_ids:
-            json_dict["links"].append(
-                {
-                    "source": node_id_to_num[node_id],
-                    "target": node_id_to_num[linked_node_id],
-                    "width": _size_link_width(graph, node_id, linked_node_id),
-                }
-            )
+
+    if len(graph["simplices"]) < 2:
+        return json_dict
+
+    for i, (node_id, linked_node_id) in enumerate(graph["simplices"][1]):
+        json_dict["links"].append(
+            {
+                "source": node_id_to_num[node_id],
+                "target": node_id_to_num[linked_node_id],
+                "width": _size_link_width(graph, node_id, linked_node_id),
+            }
+        )
     return json_dict
 
 
@@ -411,7 +416,7 @@ def _format_cluster_statistics(member_ids, X, X_names):
 
         above_mean = cluster_X_mean > X_mean
 
-        with np.errstate(divide='ignore'):
+        with np.errstate(divide="ignore"):
             std_m = np.sqrt((cluster_X_mean - X_mean) ** 2) / X_std
 
         stat_zip = list(
@@ -550,7 +555,13 @@ def _format_tooltip(
 
 
 def _render_d3_vis(
-    title, mapper_summary, histogram, mapper_data, colorscale, include_searchbar, include_min_intersection_selector
+    title,
+    mapper_summary,
+    histogram,
+    mapper_data,
+    colorscale,
+    include_searchbar,
+    include_min_intersection_selector,
 ):
     # Find the module absolute path and locate templates
     module_root = os.path.join(os.path.dirname(__file__), "templates")
@@ -589,7 +600,7 @@ def _render_d3_vis(
         js_text=js_text,
         css_text=css_text,
         include_searchbar=include_searchbar,
-        include_min_intersection_selector=include_min_intersection_selector
+        include_min_intersection_selector=include_min_intersection_selector,
     )
 
     return html

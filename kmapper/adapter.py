@@ -23,8 +23,10 @@ def to_networkx(graph):
     # import here so networkx is not always required.
     import networkx as nx
 
-    nodes = graph["nodes"].keys()
-    edges = [[start, end] for start, ends in graph["links"].items() for end in ends]
+    simplices = graph["simplices"]
+
+    nodes = simplices[0] if len(simplices) >= 1 else list()
+    edges = simplices[1] if len(simplices) >= 2 else list()
 
     g = nx.Graph()
     g.add_nodes_from(nodes)

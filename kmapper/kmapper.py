@@ -1,31 +1,27 @@
 from __future__ import division
 
+import warnings
 from collections import defaultdict
 from datetime import datetime
-import inspect
-import itertools
-import os
-import sys
-import warnings
 
 import numpy as np
-from sklearn import cluster, preprocessing, manifold, decomposition
-from sklearn.model_selection import StratifiedKFold, KFold
+from scipy.sparse import hstack, issparse
 from scipy.spatial import distance
-from scipy.sparse import issparse, hstack
+from sklearn import cluster, preprocessing
+from sklearn.model_selection import KFold, StratifiedKFold
 
 from .cover import Cover
 from .nerve import GraphNerve
-from .visuals import (
-    _scale_color_values,
-    _format_meta,
-    _format_mapper_data,
-    _build_histogram,
-    _graph_data_distribution,
-    colorscale_default,
-    _render_d3_vis,
-)
 from .utils import deprecated_alias
+from .visuals import (
+    _build_histogram,
+    _format_mapper_data,
+    _format_meta,
+    _graph_data_distribution,
+    _render_d3_vis,
+    _scale_color_values,
+    colorscale_default,
+)
 
 # expose "cluster" to make examples and usage tidier
 __all__ = ["KeplerMapper", "cluster"]
@@ -567,10 +563,9 @@ class KeplerMapper(object):
         if remove_duplicate_nodes:
             nodes = self._remove_duplicate_nodes(nodes)
 
-        links, simplices = nerve.compute(nodes)
+        simplices = nerve.compute(nodes)
 
         graph["nodes"] = nodes
-        graph["links"] = links
         graph["simplices"] = simplices
         graph["meta_data"] = {
             "projection": self.projection if self.projection else "custom",
@@ -578,7 +573,7 @@ class KeplerMapper(object):
             "perc_overlap": self.cover.perc_overlap,
             "clusterer": str(clusterer),
             "scaler": str(self.scaler),
-            "nerve_min_intersection": nerve.min_intersection
+            "nerve_min_intersection": nerve.min_intersection,
         }
         graph["meta_nodes"] = meta
 
@@ -615,11 +610,12 @@ class KeplerMapper(object):
 
     def _summary(self, graph, time):
         # TODO: this summary is dependent on the type of Nerve being built.
-        links = graph["links"]
-        nodes = graph["nodes"]
-        nr_links = sum(len(v) for k, v in links.items())
+        simplices = graph["simplices"]
 
-        print("\nCreated %s edges and %s nodes in %s." % (nr_links, len(nodes), time))
+        print(
+            "\nCreated %s edges and %s nodes in %s."
+            % (len(simplices[1]), len(simplices[0]), time)
+        )
 
     @deprecated_alias(color_function="color_values")
     def visualize(
@@ -640,7 +636,7 @@ class KeplerMapper(object):
         lens_names=None,
         nbins=10,
         include_searchbar=False,
-        include_min_intersection_selector=False
+        include_min_intersection_selector=False,
     ):
         """Generate a visualization of the simplicial complex mapper output. Turns the complex dictionary into a HTML/D3.js visualization
 
@@ -923,7 +919,13 @@ class KeplerMapper(object):
         )
 
         html = _render_d3_vis(
-            title, mapper_summary, histogram, mapper_data, colorscale, include_searchbar, include_min_intersection_selector
+            title,
+            mapper_summary,
+            histogram,
+            mapper_data,
+            colorscale,
+            include_searchbar,
+            include_min_intersection_selector,
         )
 
         if save_file:

@@ -1,30 +1,26 @@
-import os
-import numbers
 import json
-import pytest
-
-import numpy as np
-import scipy.sparse
-from sklearn.datasets import make_circles
-from kmapper import KeplerMapper
-
-from kmapper import visuals
-from kmapper.visuals import (
-    _scale_color_values,
-    _format_meta,
-    _format_mapper_data,
-    _map_val2color,
-    _build_histogram,
-    _graph_data_distribution,
-    _node_color_function,
-    _to_html_format,
-)
-from kmapper.utils import _test_raised_deprecation_warning
+import numbers
+import os
 import warnings
 
-
+import numpy as np
+import pytest
+import scipy.sparse
 from jinja2 import Environment, FileSystemLoader
+from sklearn.datasets import make_circles
 
+from kmapper import KeplerMapper, visuals
+from kmapper.utils import _test_raised_deprecation_warning
+from kmapper.visuals import (
+    _build_histogram,
+    _format_mapper_data,
+    _format_meta,
+    _graph_data_distribution,
+    _map_val2color,
+    _node_color_function,
+    _scale_color_values,
+    _to_html_format,
+)
 
 np.random.seed(1)
 
@@ -129,7 +125,7 @@ class TestVisualHelpers:
 
     def test_node_averages_multiple_color_value_vectors(self):
         nodes = {"a": [0, 1, 2], "b": [3, 4, 5]}
-        graph = {"nodes": nodes, "links": {}}
+        graph = {"nodes": nodes, "simplices": []}
 
         n_samples = np.max([i for s in graph["nodes"].values() for i in s]) + 1
         color_values_1 = np.arange(n_samples)
@@ -328,7 +324,7 @@ class TestVisualHelpers:
         )
 
     def test_visualize_multiple_color_functions(self):
-        """ convenience test for generating a vis with multiple color_values"""
+        """convenience test for generating a vis with multiple color_values"""
         mapper = KeplerMapper()
         data, labels = make_circles(1000, random_state=0)
         lens = mapper.fit_transform(data, projection=[0])
@@ -343,7 +339,7 @@ class TestVisualHelpers:
         )
 
     def test_visualize_multiple_node_color_functions(self):
-        """ convenience test for generating a vis with multiple node_color_values but 1d color_values"""
+        """convenience test for generating a vis with multiple node_color_values but 1d color_values"""
         mapper = KeplerMapper()
         data, labels = make_circles(1000, random_state=0)
         lens = mapper.fit_transform(data, projection=[0])
@@ -357,7 +353,7 @@ class TestVisualHelpers:
         )
 
     def test_visualize_multiple_color_function_and_node_color_functions(self):
-        """ convenience test for generating a vis with multiple color_values _and_ multiple node_color_values"""
+        """convenience test for generating a vis with multiple color_values _and_ multiple node_color_values"""
         mapper = KeplerMapper()
         data, labels = make_circles(1000, random_state=0)
         lens = mapper.fit_transform(data, projection=[0])
@@ -375,7 +371,7 @@ class TestVisualHelpers:
         )
 
     def test_visualize_search_bar(self):
-        """ convenience test for generating a vis with a search bar (and also with multiple color_values _and_ multiple node_color_values)"""
+        """convenience test for generating a vis with a search bar (and also with multiple color_values _and_ multiple node_color_values)"""
         mapper = KeplerMapper()
         data, labels = make_circles(1000, random_state=0)
         lens = mapper.fit_transform(data, projection=[0])
@@ -394,7 +390,7 @@ class TestVisualHelpers:
         )
 
     def test_visualize_min_intersection_selector(self):
-        """ convenience test for generating a vis with a min_intersection_selector
+        """convenience test for generating a vis with a min_intersection_selector
         (and also with multiple color_values _and_ multiple node_color_values)"""
         mapper = KeplerMapper()
         data, labels = make_circles(1000, random_state=0)
@@ -638,7 +634,7 @@ class TestVisualizeIntegration:
 
 class TestColorhandling:
     def test_map_val2color_on_point(self, default_colorscale):
-        """ This function takes a val, a min and max, and a color scale, and finds the color the val should be """
+        """This function takes a val, a min and max, and a color scale, and finds the color the val should be"""
 
         for v, color in default_colorscale:
             c = _map_val2color(v, 0.0, 1.0, default_colorscale)
