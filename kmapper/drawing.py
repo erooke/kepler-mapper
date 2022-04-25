@@ -5,7 +5,6 @@
 
 import numpy as np
 
-
 __all__ = ["draw_matplotlib"]
 
 
@@ -41,11 +40,11 @@ def draw_matplotlib(g, ax=None, fig=None, layout="kk"):
         List of nodes constructed with Networkx ``draw_networkx_nodes``. This can be used to further customize node attributes.
 
     """
-    import networkx as nx
     import os
 
     # https://stackoverflow.com/a/50089385/5917194
     import matplotlib as mpl
+    import networkx as nx
 
     if os.environ.get("DISPLAY", "") == "":
         print("no display found. Using non-interactive Agg backend")

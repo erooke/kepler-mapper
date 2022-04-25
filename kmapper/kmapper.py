@@ -1,5 +1,6 @@
 from __future__ import division
 
+import logging
 import warnings
 from collections import defaultdict
 from datetime import datetime
@@ -47,28 +48,19 @@ class KeplerMapper(object):
 
     """
 
-    def __init__(self, verbose=0):
-        """Constructor for KeplerMapper class.
-
-        Parameters
-        ===========
-
-        verbose: int, default is 0
-            Logging level. Currently 3 levels (0,1,2) are supported. For no logging, set `verbose=0`. For some logging, set `verbose=1`. For complete logging, set `verbose=2`.
-
-        """
+    def __init__(self):
+        """Constructor for KeplerMapper class."""
 
         # TODO: move as many of the arguments from fit_transform and map into here.
-        self.verbose = verbose
         self.projection = None
         self.scaler = None
         self.cover = None
+        self.logger = logging.getLogger(__name__)
 
-        if verbose > 0:
-            print(self)
+        logging.debug(self)
 
     def __repr__(self):
-        return "KeplerMapper(verbose={})".format(self.verbose)
+        return "KeplerMapper()"
 
     def project(
         self,
@@ -163,8 +155,7 @@ class KeplerMapper(object):
         self.projection = str(projection)
         self.distance_matrix = distance_matrix
 
-        if self.verbose > 0:
-            print("..Projecting on data shaped %s" % (str(X.shape)))
+        self.logger.info("..Projecting on data shaped %s", str(X.shape))
 
         # If distance_matrix is a scipy.spatial.pdist string, we create a square distance matrix
         # from the vectors, before applying a projection.
@@ -192,22 +183,26 @@ class KeplerMapper(object):
             "yule",
         ]:
             X = distance.squareform(distance.pdist(X, metric=distance_matrix))
-            if self.verbose > 0:
-                print(
-                    "Created distance matrix, shape: %s, with distance metric `%s`"
-                    % (X.shape, distance_matrix)
-                )
+            self.logger.info(
+                "Created distance matrix, shape: %s, with distance metric `%s`",
+                X.shape,
+                distance_matrix,
+            )
 
         # Detect if projection is a class (for scikit-learn)
         try:
-            p = projection.get_params()  # fail quickly
+            _ = projection.get_params()  # fail quickly
             reducer = projection
-            if self.verbose > 0:
-                try:
-                    projection.set_params(**{"verbose": self.verbose})
-                except:
-                    pass
-                print("\n..Projecting data using: \n\t%s\n" % str(projection))
+
+            # TODO should we be messing with the projection verbosity?
+
+            if self.logger.isEnabledFor(logging.INFO):
+                projection.set_params(**{"verbose": 1})
+
+            if self.logger.isEnabledFor(logging.DEBUG):
+                projection.set_params(**{"verbose": 2})
+
+            self.logger.info("\n..Projecting data using: \n\t%s\n", str(projection))
             X = reducer.fit_transform(X)
         except:
             pass
@@ -219,8 +214,7 @@ class KeplerMapper(object):
         # Detect if projection is a string (for standard functions)
         # TODO: test each one of these projections
         if isinstance(projection, str):
-            if self.verbose > 0:
-                print("\n..Projecting data using: %s" % (projection))
+            self.logger.info("\n..Projecting data using: %s", projection)
 
             def dist_mean(X, axis=1):
                 X_mean = np.mean(X, axis=0)
@@ -263,20 +257,17 @@ class KeplerMapper(object):
 
         # Detect if projection is a list (with dimension indices)
         if isinstance(projection, list):
-            if self.verbose > 0:
-                print("\n..Projecting data using: %s" % (str(projection)))
+            self.logger.info("\n..Projecting data using: %s", str(projection))
             X = X[:, np.array(projection)]
 
         # If projection produced sparse output, turn into a dense array
         if issparse(X):
             X = X.toarray()
-            if self.verbose > 0:
-                print("\n..Created projection shaped %s" % (str(X.shape)))
+            self.logger.info("\n..Created projection shaped %s", str(X.shape))
 
         # Scaling
         if scaler is not None:
-            if self.verbose > 0:
-                print("\n..Scaling with: %s\n" % str(scaler))
+            self.logger.info("\n..Scaling with: %s\n", str(scaler))
             X = scaler.fit_transform(X)
 
         return X
@@ -343,11 +334,16 @@ class KeplerMapper(object):
         if len(distance_matrices) != len(projections):
             distance_matrices = [distance_matrices[0]] * len(projections)
 
-        if self.verbose > 0:
-            print("..Composing projection pipeline of length %s:" % (len(projections)))
-            print("\tProjections: %s" % ("\n\t\t".join(map(str, projections))))
-            print("\tDistance matrices: %s" % ("\n".join(map(str, distance_matrices))))
-            print("\tScalers: %s" % ("\n".join(map(str, scalers))))
+        self.logger.info(
+            "..Composing projection pipeline of length %s:", len(projections)
+        )
+
+        self.logger.info("\tProjections: %s", "\n\t\t".join(map(str, projections)))
+
+        self.logger.info(
+            "\tDistance matrices: %s", "\n".join(map(str, distance_matrices))
+        )
+        self.logger.info("\tScalers: %s", "\n".join(map(str, scalers)))
 
         # Pipeline Stack the projection functions
         lens = X
@@ -477,11 +473,10 @@ class KeplerMapper(object):
         if X is None:
             X = lens
 
-        if self.verbose > 0:
-            print(
-                "Mapping on data shaped %s using lens shaped %s\n"
-                % (str(X.shape), str(lens.shape))
-            )
+        self.logger.info(
+            "Mapping on data shaped %s using lens shaped %s\n"
+            % (str(X.shape), str(lens.shape))
+        )
 
         # Prefix'ing the data with an ID column
         ids = np.array([x for x in range(lens.shape[0])])
@@ -508,18 +503,17 @@ class KeplerMapper(object):
         if not min_cluster_samples:
             min_cluster_samples = 2
 
-        if self.verbose > 1:
-            print(
-                "Minimal points in hypercube before clustering: {}".format(
-                    min_cluster_samples
-                )
+        self.logger.info(
+            "Minimal points in hypercube before clustering: {}".format(
+                min_cluster_samples
             )
+        )
 
         # Subdivide the projected data X in intervals/hypercubes with overlap
-        if self.verbose > 0:
+        if self.logger.isEnabledFor(logging.INFO):
             bins = list(bins)  # extract list from generator
             total_bins = len(bins)
-            print("Creating %s hypercubes." % total_bins)
+            logging.info("Creating %s hypercubes.", total_bins)
 
         for i, hypercube in enumerate(self.cover.transform(lens)):
 
@@ -536,15 +530,15 @@ class KeplerMapper(object):
 
                 cluster_predictions = clusterer.fit_predict(fit_data)
 
-                if self.verbose > 1:
+                if self.logger.isEnabledFor(logging.INFO):
                     print(
-                        "   > Found %s clusters in hypercube %s."
-                        % (
+                        "   > Found %s clusters in hypercube %s.",
+                        (
                             np.unique(
                                 cluster_predictions[cluster_predictions > -1]
                             ).shape[0],
                             i,
-                        )
+                        ),
                     )
 
                 for pred in np.unique(cluster_predictions):
@@ -557,8 +551,7 @@ class KeplerMapper(object):
                             .astype(int)
                             .tolist()
                         )
-            elif self.verbose > 1:
-                print("Cube_%s is empty.\n" % (i))
+            self.logger.info("Cube_%s is empty.\n", i)
 
         if remove_duplicate_nodes:
             nodes = self._remove_duplicate_nodes(nodes)
@@ -577,8 +570,7 @@ class KeplerMapper(object):
         }
         graph["meta_nodes"] = meta
 
-        if self.verbose > 0:
-            self._summary(graph, str(datetime.now() - start))
+        self._summary(graph, str(datetime.now() - start))
 
         return graph
 
@@ -594,17 +586,17 @@ class KeplerMapper(object):
             for frozen_items, node_id_list in deduped_items.items()
         }
 
-        if self.verbose > 0:
+        if self.logger.isEnabledFor(logging.INFO):
             total_merged = len(nodes) - len(deduped_items)
             if total_merged:
-                print("Merged {} duplicate nodes.\n".format(total_merged))
-                print(
+                self.logger.info("Merged {} duplicate nodes.\n".format(total_merged))
+                self.logger.info(
                     "Number of nodes before merger: {}; after merger: {}\n".format(
                         len(nodes), len(deduped_nodes)
                     )
                 )
             else:
-                print("No duplicate nodes found to remove.\n")
+                self.logger.info("No duplicate nodes found to remove.\n")
 
         return deduped_nodes
 
@@ -612,9 +604,11 @@ class KeplerMapper(object):
         # TODO: this summary is dependent on the type of Nerve being built.
         simplices = graph["simplices"]
 
-        print(
-            "\nCreated %s edges and %s nodes in %s."
-            % (len(simplices[1]), len(simplices[0]), time)
+        self.logger.info(
+            "\nCreated %s edges and %s nodes in %s.",
+            len(simplices[1]),
+            len(simplices[0]),
+            time,
         )
 
     @deprecated_alias(color_function="color_values")
@@ -930,8 +924,7 @@ class KeplerMapper(object):
 
         if save_file:
             with open(path_html, "wb") as outfile:
-                if self.verbose > 0:
-                    print("Wrote visualization to: %s" % (path_html))
+                self.logger.info("Wrote visualization to: %s", path_html)
                 outfile.write(html.encode("utf-8"))
 
         return html

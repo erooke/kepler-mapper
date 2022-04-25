@@ -1,12 +1,13 @@
-import pytest
 import numpy as np
+import pytest
+
 import kmapper as km
 from kmapper import draw_matplotlib
 
 
 @pytest.fixture
 def mapper():
-    mapper = km.KeplerMapper(verbose=0)
+    mapper = km.KeplerMapper()
     data = np.random.rand(100, 2)
     graph = mapper.map(data)
     return graph

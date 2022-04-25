@@ -1,4 +1,5 @@
 import numpy as np
+
 from kmapper.cover import Cover
 
 # uniform data:

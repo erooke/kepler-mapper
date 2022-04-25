@@ -1,13 +1,12 @@
+import networkx as nx
 import numpy as np
 
-import networkx as nx
-
-from kmapper import to_networkx, to_nx, KeplerMapper
+from kmapper import KeplerMapper, to_networkx, to_nx
 
 
 class TestNetworkx:
     def test_convertions(self):
-        mapper = KeplerMapper(verbose=0)
+        mapper = KeplerMapper()
         data = np.random.rand(100, 2)
         graph = mapper.map(data)
 
@@ -15,7 +14,7 @@ class TestNetworkx:
         assert isinstance(g, nx.Graph)
 
     def test_membership(self):
-        mapper = KeplerMapper(verbose=0)
+        mapper = KeplerMapper()
         data = np.random.rand(100, 2)
         graph = mapper.map(data)
         n, m = list(graph["nodes"].items())[0]
@@ -23,7 +22,7 @@ class TestNetworkx:
         assert g.nodes[n]["membership"] == m
 
     def test_nx_alias(self):
-        mapper = KeplerMapper(verbose=0)
+        mapper = KeplerMapper()
         data = np.random.rand(100, 2)
         graph = mapper.map(data)
 

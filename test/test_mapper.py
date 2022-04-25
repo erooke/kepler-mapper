@@ -1,3 +1,4 @@
+import logging
 import warnings
 from collections import defaultdict
 
@@ -17,44 +18,33 @@ from kmapper import Cover, KeplerMapper, cluster
 class TestLogging:
     """Simple tests that confirm map completes at each logging level"""
 
-    def test_runs_with_logging_0(self, capsys):
-        mapper = KeplerMapper(verbose=0)
+    def test_runs_without_logging(self, caplog):
+        mapper = KeplerMapper()
         data = np.random.rand(100, 2)
-        graph = mapper.map(data)
+        _ = mapper.map(data)
 
-        captured = capsys.readouterr()
-        assert captured[0] == ""
+        assert not caplog.text
 
-    def test_runs_with_logging_1(self):
-        mapper = KeplerMapper(verbose=1)
+    def test_logging_in_project(self, caplog):
+        caplog.set_level(logging.INFO)
+        mapper = KeplerMapper()
         data = np.random.rand(100, 2)
-        graph = mapper.map(data)
+        _ = mapper.project(data)
 
-    def test_runs_with_logging_2(self):
-        mapper = KeplerMapper(verbose=2)
+        assert "Projecting on" in caplog.text
+
+    def test_logging_in_fit_transform(self, caplog):
+        caplog.set_level(logging.INFO)
+        mapper = KeplerMapper()
         data = np.random.rand(100, 2)
-        graph = mapper.map(data)
+        _ = mapper.fit_transform(data)
 
-    def test_logging_in_project(self, capsys):
-        mapper = KeplerMapper(verbose=2)
-        data = np.random.rand(100, 2)
-        lens = mapper.project(data)
-
-        captured = capsys.readouterr()
-        assert "Projecting on" in captured[0]
-
-    def test_logging_in_fit_transform(self, capsys):
-        mapper = KeplerMapper(verbose=2)
-        data = np.random.rand(100, 2)
-        lens = mapper.fit_transform(data)
-
-        captured = capsys.readouterr()
-        assert "Composing projection pipeline of length 1" in captured[0]
+        assert "Composing projection pipeline of length 1" in caplog.text
 
 
 class TestDataAccess:
     def test_members_from_id(self):
-        mapper = KeplerMapper(verbose=1)
+        mapper = KeplerMapper()
         data = np.random.rand(100, 2)
 
         ids = np.random.choice(10, 100)
@@ -66,7 +56,7 @@ class TestDataAccess:
         np.testing.assert_array_equal(data[ids], mems)
 
     def test_wrong_id(self):
-        mapper = KeplerMapper(verbose=1)
+        mapper = KeplerMapper()
         data = np.random.rand(100, 2)
 
         graph = mapper.map(data)
@@ -118,12 +108,13 @@ class TestMap:
         assert graph["nodes"] == graph2["nodes"]
         assert graph["simplices"] == graph2["simplices"]
 
-    def test_remove_duplicates_argument(self, capsys):
-        mapper = KeplerMapper(verbose=1)
+    def test_remove_duplicates_argument(self, caplog):
+        caplog.set_level(logging.INFO)
+        mapper = KeplerMapper()
         X = np.random.rand(100, 5)
 
         lens = mapper.project(X)
-        graph = mapper.map(
+        _ = mapper.map(
             lens,
             X=X,
             cover=Cover(n_cubes=2, perc_overlap=0.99),
@@ -131,10 +122,10 @@ class TestMap:
             remove_duplicate_nodes=True,
         )
 
-        captured = capsys.readouterr()
-        assert "duplicate nodes" in captured[0]
+        assert "duplicate nodes" in caplog.text
 
-    def test_lots_of_repeats(self, capsys):
+    def test_lots_of_repeats(self, caplog):
+        caplog.set_level(logging.INFO)
         nodes = defaultdict(list)
         for i in range(4):
             nodes["cube{}_cluster0".format(i)] = [0, 1]
@@ -143,11 +134,10 @@ class TestMap:
         nodes["cube1_cluster2"] = [1, 2, 3]
         nodes["cube2_cluster3"] = [2, 3, 4]
 
-        deduped_nodes = KeplerMapper(verbose=1)._remove_duplicate_nodes(nodes)
+        deduped_nodes = KeplerMapper()._remove_duplicate_nodes(nodes)
         assert len(deduped_nodes) == 4
 
-        captured = capsys.readouterr()
-        assert "Merged 5 duplicate nodes." in captured[0]
+        assert "Merged 5 duplicate nodes." in caplog.text
 
     def test_no_duplicates(self):
         nodes = defaultdict(list)
@@ -266,7 +256,7 @@ class TestLens:
 
     def test_distance_matrix(self):
         # todo, test other distance_matrix functions
-        mapper = KeplerMapper(verbose=4)
+        mapper = KeplerMapper()
         X = np.random.rand(100, 10)
         lens = mapper.fit_transform(X, distance_matrix="euclidean")
 
@@ -341,7 +331,7 @@ class TestLens:
         # accomodate scaling, values are in (0,1), but will be scaled slightly
         atol = 0.1
 
-        mapper = KeplerMapper(verbose=1)
+        mapper = KeplerMapper()
         data = np.random.rand(100, 5)
         lens = mapper.project(data, projection=[0, 1])
         np.testing.assert_allclose(lens, data[:, :2], atol=atol)

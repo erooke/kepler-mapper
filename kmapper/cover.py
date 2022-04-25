@@ -5,6 +5,7 @@ try:
 except:
     from collections import Iterable
 
+import logging
 import warnings
 from itertools import product
 
@@ -72,7 +73,7 @@ class Cover:
 
     """
 
-    def __init__(self, n_cubes=10, perc_overlap=0.5, limits=None, verbose=0):
+    def __init__(self, n_cubes=10, perc_overlap=0.5, limits=None):
         self.centers_ = None
         self.radius_ = None
         self.inner_range_ = None
@@ -82,7 +83,7 @@ class Cover:
         self.n_cubes = n_cubes
         self.perc_overlap = perc_overlap
         self.limits = limits
-        self.verbose = verbose
+        self.logger = logging.getLogger(__name__)
 
         # Check limits can actually be handled and are set appropriately
         assert isinstance(
@@ -93,11 +94,10 @@ class Cover:
             assert self.limits.shape[1] == 2, "limits should be (n_dim,2) in shape"
 
     def __repr__(self):
-        return "Cover(n_cubes=%s, perc_overlap=%s, limits=%s, verbose=%s)" % (
+        return "Cover(n_cubes=%s, perc_overlap=%s, limits=%s)" % (
             self.n_cubes,
             self.perc_overlap,
             self.limits,
-            self.verbose,
         )
 
     def _compute_bounds(self, data):
@@ -199,11 +199,10 @@ class Cover:
         self.bounds_ = bounds
         self.di_ = di
 
-        if self.verbose > 0:
-            print(
-                " - Cover - centers: %s\ninner_range: %s\nradius: %s"
-                % (self.centers_, self.inner_range_, self.radius_)
-            )
+        self.logger.info(
+            " - Cover - centers: %s\ninner_range: %s\nradius: %s"
+            % (self.centers_, self.inner_range_, self.radius_)
+        )
 
         return centers
 
@@ -229,11 +228,12 @@ class Cover:
         )
         hypercube = data[np.invert(np.any(entries == False, axis=1))]
 
-        if self.verbose > 1:
-            print(
-                "There are %s points in cube %s/%s"
-                % (hypercube.shape[0], i + 1, len(self.centers_))
-            )
+        self.logger.info(
+            "There are %s points in cube %s/%s",
+            hypercube.shape[0],
+            i + 1,
+            len(self.centers_),
+        )
 
         return hypercube
 

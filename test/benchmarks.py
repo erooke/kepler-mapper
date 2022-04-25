@@ -10,12 +10,14 @@ Should provide summary of
 
 """
 
-import cProfile, pstats, io
-
+import cProfile
+import io
+import pstats
 import time
 
 import numpy as np
 from sklearn import datasets
+
 from kmapper import Cover, KeplerMapper
 
 
@@ -37,7 +39,9 @@ def profile():
 
     for data in blob_list:
         lens = mapper.fit_transform(data)
-        graph = mapper.map(lens, data, cover=Cover(n_cubes=n_cubes, perc_overlap=overlap))
+        graph = mapper.map(
+            lens, data, cover=Cover(n_cubes=n_cubes, perc_overlap=overlap)
+        )
 
     pr.disable()
     s = io.StringIO()
