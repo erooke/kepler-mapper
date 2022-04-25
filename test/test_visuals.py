@@ -262,7 +262,8 @@ class TestVisualHelpers:
 
         assert len(color_values) == len(nodes["a"]) + len(nodes["b"]) + 1
 
-    def test_format_meta(self):
+    @pytest.mark.skip()
+    def test_format_meta_one(self):
         mapper = KeplerMapper()
         data = np.random.rand(1000, 10)
         lens = mapper.fit_transform(data, projection=[0])
